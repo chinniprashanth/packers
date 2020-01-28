@@ -1,0 +1,54 @@
+{
+  "variables": {
+    "source_image_family": "var",
+    "machine_type": "var",
+    "region": "var",
+    "zone": "var",
+    "project_id": "var",
+    "service_account_json": "var"
+  },
+  "builders": [
+    {
+      "type": "googlecompute",
+      "project_id": "silver-tape-229203",
+      "machine_type": "n1-standard-1",
+      "source_image_family": "centos-7",
+      "region": "us-east4",
+      "zone": "us-east4-a",
+      "image_description": "Centos 7 Image",
+      "image_name": "kafkacassandra-{{timestamp}}",
+      "disk_size": 16,
+      "disk_type": "pd-ssd",
+      "ssh_username": "kafka",
+      "account_file": "silver-tape-229203-d3ad4a6dd484.json"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sleep 10"
+
+      ]
+    },
+	{
+        "type": "file",
+        "source": "resources.zip",
+        "destination": "/tmp/resources.zip"
+    },
+	{
+      "type": "shell",
+            "inline": [
+			    "sudo yum -y install zip unzip rpm wget nc",
+				"sudo unzip /tmp/resources.zip -d /tmp/",
+                "sudo yum -y install java",
+				"sudo cd /opt && sudo wget -P /opt/  http://archive.apache.org/dist/kafka/1.0.0/kafka_2.11-1.0.0.tgz && sudo tar -xzvf /opt/kafka_2.11-1.0.0.tgz -C /opt && sudo wget -P /opt  https://archive.apache.org/dist/zookeeper/zookeeper-3.4.10/zookeeper-3.4.10.tar.gz && sudo tar -xzvf /opt/zookeeper-3.4.10.tar.gz -C /opt/ && sudo mkdir -p /data/zookeeper && sudo mkdir -p /data/kafka-logs && sudo chown -R kafka:kafka /data/ && sudo chown -R kafka:kafka /opt && sudo rm -rf /opt/kafka_2.11-1.0.0/config/server.properties && sudo cp /tmp/resources/server.properties /opt/kafka_2.11-1.0.0/config/. && sudo cp /tmp/resources/zoo.conf /opt/zookeeper-3.4.10/conf/zoo.cfg && sudo chown -R kafka:kafka /opt/ && sudo cp /tmp/resources/zoo-startup.properties /etc/systemd/system/zookeeper.service && sudo cp /tmp/resources/kafka-startup.properties /etc/systemd/system/kafka.service && sudo systemctl daemon-reload && sudo systemctl start zookeeper && sudo systemctl start kafka && sudo systemctl enable zookeeper && sudo systemctl enable kafka",
+				"sudo cp /tmp/resources/cassandra.txt /etc/yum.repos.d/cassandra.repo",
+                "sudo yum -y update && sudo yum -y install cassandra && sudo systemctl daemon-reload && sudo systemctl start cassandra && sudo systemctl enable cassandra",				
+				"sudo cp /tmp/resources/start.sh /opt/start.sh && sudo chown -R kafka:kafka /opt/start.sh && sudo sh /tmp/resources/placecron.sh"
+
+				]
+    }
+	
+  ]
+}
